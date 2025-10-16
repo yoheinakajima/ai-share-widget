@@ -7,17 +7,17 @@
   <style>
     :root {
       --fg:#0b1220; --muted:#626b7f; --border:#e6eaf2; --card:#fff; --bg:#f6f8fc;
-      --radius:14px; --shadow:0 4px 18px rgba(10,10,20,.06);
+      --radius:14px; --shadow:0 8px 28px rgba(10,10,20,.06);
       --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
       --sans: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
       --primary:#0b63f6; --primaryDark:#094bd2;
     }
     *{box-sizing:border-box}
     body { margin:0; background:var(--bg); color:var(--fg); font-family:var(--sans); }
-    .wrap { max-width:980px; margin:0 auto; padding:26px 16px; display:grid; gap:16px; }
+    .wrap { max-width:980px; margin:0 auto; padding:28px 16px; display:grid; gap:18px; }
     .card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:18px; }
-    h1 { margin:0 0 6px; font-size:1.25rem; letter-spacing:.1px; }
-    h2 { margin:0 0 6px; font-size:1.05rem; }
+    h1 { margin:0 0 6px; font-size:1.28rem; letter-spacing:.1px; }
+    h2 { margin:0 0 6px; font-size:1.08rem; }
     p { margin:0; }
     .muted { color:var(--muted); }
     a { color:var(--primary); text-decoration:none; }
@@ -35,8 +35,8 @@
     <div class="card">
       <h1>AI Share Widget</h1>
       <p class="muted">
-        A tiny, zero-dependency widget that lets users open your prompt in their preferred AI
-        (ChatGPT, Claude, Perplexity, Gemini). It renders a lightweight row of buttons—one per service.
+        A tiny, zero-dependency widget that renders a row of buttons—one per AI service—and opens your prompt
+        in the chosen tool (ChatGPT, Claude, Perplexity, Gemini).
         Recommended import via <strong>jsDelivr</strong>. Source on
         <a href="https://github.com/yoheinakajima/ai-share-widget" target="_blank" rel="noopener">GitHub</a>.
       </p>
@@ -52,16 +52,16 @@
     <!-- Live widget demo -->
     <div class="card">
       <h2>Generate use cases with AI:</h2>
-      <p class="muted">Pick a service below. We’ll pass this page’s content as context in the prompt.</p>
-      <div style="height:8px"></div>
+      <p class="muted">Click a service below. We’ll pass this page’s content as context in the prompt.</p>
+      <div style="height:10px"></div>
       <div id="ai-buttons"></div>
     </div>
 
     <!-- README-ish: Quick Start -->
     <div class="card" id="context">
       <h2>Quick Start (jsDelivr)</h2>
-      <pre class="code">&lt;!-- 1) Import the widget --&gt;
-&lt;script src="https://cdn.jsdelivr.net/gh/yoheinakajima/ai-share-widget@v1/ai-share.js"&gt;&lt;/script&gt;
+      <pre class="code">&lt;!-- 1) Import the widget (using @main so it works immediately; switch to @v1 after tagging a release) --&gt;
+&lt;script src="https://cdn.jsdelivr.net/gh/yoheinakajima/ai-share-widget@main/ai-share.js"&gt;&lt;/script&gt;
 
 &lt;!-- 2) Add a container where the row of buttons should appear --&gt;
 &lt;div id="ai-buttons"&gt;&lt;/div&gt;
@@ -101,10 +101,14 @@ AiShare.registry.services</pre>
     </div>
   </div>
 
-  <!-- Widget (jsDelivr recommended) -->
-  <script src="https://cdn.jsdelivr.net/gh/yoheinakajima/ai-share-widget@v1/ai-share.js"></script>
+  <!-- Widget via FULL URL (jsDelivr @main so it works before tagging) -->
+  <script src="https://cdn.jsdelivr.net/gh/yoheinakajima/ai-share-widget@main/ai-share.js"></script>
+  <!-- Alternative (GitHub Pages), if you publish ai-share.js at that path:
+  <script src="https://yoheinakajima.github.io/ai-share-widget/ai-share.js"></script>
+  -->
+
   <script>
-    // Build a single prompt using this page's content as context (tight + simple).
+    // Build a single prompt using #context text as context (keeps URL friendly)
     function buildUseCasesPrompt() {
       const text = document.getElementById('context').innerText
         .replace(/\s+/g, ' ').trim().slice(0, 1800);
@@ -117,11 +121,18 @@ AiShare.registry.services</pre>
       ].join("\n");
     }
 
-    // Mount the row of buttons (ChatGPT, Claude, Gemini, Perplexity).
-    AiShare.mountButtons('#ai-buttons', buildUseCasesPrompt, {
-      services: ['chatgpt','claude','gemini','perplexity'],
-      size: 'md' // or 'sm'
-    });
+    // Mount the row of buttons (ChatGPT, Claude, Gemini, Perplexity)
+    // Run after DOM is ready to ensure container exists.
+    (function init() {
+      if (!window.AiShare) {
+        console.error("AiShare not loaded. Check the script src URL.");
+        return;
+      }
+      AiShare.mountButtons('#ai-buttons', buildUseCasesPrompt, {
+        services: ['chatgpt','claude','gemini','perplexity'],
+        size: 'md'
+      });
+    })();
   </script>
 </body>
 </html>
