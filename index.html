@@ -5,62 +5,74 @@
   <title>AI Share Widget — Open Source</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
-    :root {
-      --fg:#0b1220; --muted:#626b7f; --border:#e6eaf2; --card:#fff; --bg:#f6f8fc;
-      --radius:14px; --shadow:0 8px 28px rgba(10,10,20,.06);
+    :root{
+      --fg:#0b1220; --muted:#616b7a; --border:#e6eaf2; --card:#fff; --bg:#f7f9fc;
+      --radius:14px; --shadow:0 6px 22px rgba(10,10,20,.06);
       --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
       --sans: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
       --primary:#0b63f6; --primaryDark:#094bd2;
+      --maxw: 880px;
     }
     *{box-sizing:border-box}
-    body { margin:0; background:var(--bg); color:var(--fg); font-family:var(--sans); }
-    .wrap { max-width:980px; margin:0 auto; padding:28px 16px; display:grid; gap:18px; }
-    .card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:18px; }
-    h1 { margin:0 0 6px; font-size:1.28rem; letter-spacing:.1px; }
-    h2 { margin:0 0 6px; font-size:1.08rem; }
-    p { margin:0; }
-    .muted { color:var(--muted); }
-    a { color:var(--primary); text-decoration:none; }
-    a:hover { text-decoration:underline; }
-    .code { font-family:var(--mono); font-size:13px; line-height:1.55; padding:12px; background:#f3f5ff; color:#0b1220; border:1px solid var(--border); border-radius:12px; overflow:auto; }
-    .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-    .pill { display:inline-flex; align-items:center; gap:.5ch; padding:8px 12px; border:1px solid var(--border); border-radius:999px; background:#fff; color:#0b1220; }
-    #context p + p { margin-top: 8px; }
-    .divider { height:1px; background:var(--border); margin:8px 0; }
+    html,body{height:100%}
+    body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans)}
+    .wrap{max-width:var(--maxw);margin:0 auto;padding:clamp(16px,4vw,28px) clamp(12px,4vw,16px);display:grid;gap:clamp(12px,2.5vw,18px)}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:clamp(14px,3.2vw,18px)}
+    h1{margin:0 0 4px;font-size:clamp(1.1rem,3.8vw,1.25rem);letter-spacing:.1px}
+    h2{margin:0 0 4px;font-size:clamp(1rem,3.5vw,1.08rem)}
+    p{margin:0}
+    .muted{color:var(--muted)}
+    a{color:var(--primary);text-decoration:none}
+    a:hover{text-decoration:underline}
+    .code{font-family:var(--mono);font-size:13px;line-height:1.55;padding:12px;background:#f3f5ff;color:#0b1220;border:1px solid var(--border);border-radius:12px;overflow:auto}
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .tag{display:inline-flex;align-items:center;padding:6px 10px;border:1px solid var(--border);border-radius:999px;background:#fff;color:#0b1220;font-size:.92rem}
+    .divider{height:1px;background:var(--border);margin:8px 0}
+    .example-badge{display:inline-block;font-size:.75rem;letter-spacing:.03em;border:1px solid var(--border);padding:3px 8px;border-radius:999px;color:#0b1220;background:#fff}
+    #context p + p{margin-top:8px}
+
+    /* Mobile refinements */
+    @media (max-width:600px){
+      .row{gap:8px}
+      .code{font-size:12px;padding:10px}
+      .tag{padding:5px 8px}
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
     <!-- Header -->
-    <div class="card">
+    <section class="card">
       <h1>AI Share Widget</h1>
       <p class="muted">
         A tiny, zero-dependency widget that renders a row of buttons—one per AI service—and opens your prompt
-        in the chosen tool (ChatGPT, Claude, Perplexity, Gemini).
-        Recommended import via <strong>jsDelivr</strong>. Source on
-        <a href="https://github.com/yoheinakajima/ai-share-widget" target="_blank" rel="noopener">GitHub</a>.
+        in the chosen tool (ChatGPT, Claude, Perplexity, Gemini). Recommended import via <strong>jsDelivr</strong>.
+        Source on <a href="https://github.com/yoheinakajima/ai-share-widget" target="_blank" rel="noopener">GitHub</a>.
       </p>
       <div class="divider"></div>
       <div class="row">
-        <span class="pill">🚀 Minimal</span>
-        <span class="pill">📱 Mobile-friendly</span>
-        <span class="pill">🧩 Drop-in</span>
-        <span class="pill">🔁 Extensible</span>
+        <span class="tag">Minimal</span>
+        <span class="tag">Mobile-friendly</span>
+        <span class="tag">Drop-in</span>
+        <span class="tag">Extensible</span>
       </div>
-    </div>
+    </section>
 
-    <!-- Live widget demo -->
-    <div class="card">
-      <h2>Generate use cases with AI:</h2>
-      <p class="muted">Click a service below. We’ll pass this page’s content as context in the prompt.</p>
+    <!-- Example section -->
+    <section class="card" id="example">
+      <div class="row" style="justify-content:space-between;align-items:baseline">
+        <h2 style="margin:0">Generate use cases with AI</h2>
+        <span class="example-badge">Example</span>
+      </div>
+      <p class="muted">This demonstrates the AI Share widget: clicking a service sends a prompt that includes this page’s content as context.</p>
       <div style="height:10px"></div>
       <div id="ai-buttons"></div>
-    </div>
+    </section>
 
-    <!-- README-ish: Quick Start -->
-    <div class="card" id="context">
+    <!-- README-ish: Quick Start + API -->
+    <section class="card" id="context">
       <h2>Quick Start (jsDelivr)</h2>
-      <pre class="code">&lt;!-- 1) Import the widget (using @main so it works immediately; switch to @v1 after tagging a release) --&gt;
+      <pre class="code">&lt;!-- 1) Import the widget (use @main now; switch to @v1 after tagging a release) --&gt;
 &lt;script src="https://cdn.jsdelivr.net/gh/yoheinakajima/ai-share-widget@main/ai-share.js"&gt;&lt;/script&gt;
 
 &lt;!-- 2) Add a container where the row of buttons should appear --&gt;
@@ -83,14 +95,12 @@
       <h2>API</h2>
       <pre class="code">AiShare.mountButtons(container, promptOrFn, { services?: string[], size?: 'md'|'sm' })
 AiShare.openDirect(serviceKey, prompt)
-AiShare.registerService(key, { label, url, param, icon? })
+AiShare.registerService(key, { label, url, param })
 AiShare.registry.services</pre>
 
       <h2>Customize services</h2>
-      <p class="muted">
-        Add or override destinations if URLs/params change:
-      </p>
-      <pre class="code">AiShare.registerService('poe', { label:'Poe', url:'https://poe.com/search', param:'q', icon:'🟣' });</pre>
+      <p class="muted">Add or override destinations if URLs/params change:</p>
+      <pre class="code">AiShare.registerService('poe', { label:'Poe', url:'https://poe.com/search', param:'q' });</pre>
 
       <h2>What it’s good for</h2>
       <p>
@@ -98,20 +108,16 @@ AiShare.registry.services</pre>
         summarize, ideate, compare, translate, draft, or propose actions.
       </p>
       <p class="muted">This page doubles as context for the demo prompt above.</p>
-    </div>
+    </section>
   </div>
 
   <!-- Widget via FULL URL (jsDelivr @main so it works before tagging) -->
   <script src="https://cdn.jsdelivr.net/gh/yoheinakajima/ai-share-widget@main/ai-share.js"></script>
-  <!-- Alternative (GitHub Pages), if you publish ai-share.js at that path:
-  <script src="https://yoheinakajima.github.io/ai-share-widget/ai-share.js"></script>
-  -->
-
   <script>
     // Build a single prompt using #context text as context (keeps URL friendly)
-    function buildUseCasesPrompt() {
+    function buildUseCasesPrompt(){
       const text = document.getElementById('context').innerText
-        .replace(/\s+/g, ' ').trim().slice(0, 1800);
+        .replace(/\s+/g,' ').trim().slice(0,1800);
       return [
         "Brainstorm 15 distinct, concrete ways to integrate this 'Ask AI' widget into different websites and apps.",
         "Vary by product type (docs, blogs, ecommerce, dashboards, SaaS), user intent, and placement.",
@@ -122,15 +128,11 @@ AiShare.registry.services</pre>
     }
 
     // Mount the row of buttons (ChatGPT, Claude, Gemini, Perplexity)
-    // Run after DOM is ready to ensure container exists.
-    (function init() {
-      if (!window.AiShare) {
-        console.error("AiShare not loaded. Check the script src URL.");
-        return;
-      }
+    (function init(){
+      if(!window.AiShare){ console.error("AiShare not loaded. Check the script src URL."); return; }
       AiShare.mountButtons('#ai-buttons', buildUseCasesPrompt, {
-        services: ['chatgpt','claude','gemini','perplexity'],
-        size: 'md'
+        services:['chatgpt','claude','gemini','perplexity'],
+        size:'md'
       });
     })();
   </script>
