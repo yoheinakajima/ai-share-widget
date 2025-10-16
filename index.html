@@ -2,59 +2,93 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>AI Share — Minimal Demo</title>
+  <title>AI Share Widget — Minimal Demo</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:#f7f8fb;color:#111;margin:0}
-    .wrap{max-width:760px;margin:0 auto;padding:40px 20px}
-    h1{margin:0 0 10px}
-    .card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:20px;box-shadow:0 2px 10px rgba(0,0,0,.06)}
-    .muted{color:#666}
-    .options{display:grid;gap:10px;margin:16px 0}
-    .opt{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;background:#fff}
-    .ask{margin-top:10px;width:100%;padding:10px 14px;border-radius:10px;border:0;background:#0b63f6;color:#fff;font-size:1rem;cursor:not-allowed;opacity:.6}
-    .ask.enabled{cursor:pointer;opacity:1}
-    .ask.enabled:hover{background:#094bd2}
-    code{background:#eef2ff;padding:2px 6px;border-radius:6px}
+    :root {
+      --fg: #0b1220; --muted:#626b7f; --border:#e6eaf2; --card:#ffffff; --bg:#f6f8fc;
+      --radius:12px; --shadow: 0 2px 10px rgba(0,0,0,.06);
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      --sans: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+    }
+    body { margin:0; background:var(--bg); color:var(--fg); font-family:var(--sans); }
+    .wrap { max-width:860px; margin:0 auto; padding:28px 16px; display:grid; gap:16px; }
+    .row { display:grid; gap:12px; }
+    .card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px; }
+    h1 { margin:0; font-size:1.25rem; }
+    p { margin:0; }
+    .muted { color:var(--muted); }
+    .opts { display:grid; gap:8px; margin-top:8px; }
+    .opt { display:flex; gap:8px; align-items:center; padding:8px 10px; border:1px solid var(--border); border-radius:10px; background:#fff; }
+    .btn { padding:8px 12px; border-radius:10px; border:0; background:#0b63f6; color:#fff; cursor:not-allowed; opacity:.6; }
+    .btn.enabled { cursor:pointer; opacity:1; }
+    .btn.enabled:hover { background:#094bd2; }
+    .inline { display:flex; gap:10px; align-items:center; }
+    .code { font-family:var(--mono); font-size:13px; line-height:1.5; padding:12px; background:#f3f5ff; color:#0b1220; border:1px solid var(--border); border-radius:10px; overflow:auto; }
+    .small { font-size:.92rem; }
+    a { color:#0b63f6; text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    .spacer { height:4px; }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>AI Share Widget (Minimal)</h1>
-    <p class="muted">
-      Pick a prompt about this page, then click <em>Ask AI</em>. The library shows a model picker and opens the chosen AI with your prompt.
-    </p>
-
-    <div class="card">
-      <strong>Choose a prompt:</strong>
-      <div class="options" id="prompt-options">
-        <label class="opt"><input type="radio" name="p" value="Summarize {{PAGE_TITLE}} at {{PAGE_URL}} in 3 bullets."> Summarize this page in 3 bullets.</label>
-        <label class="opt"><input type="radio" name="p" value="Explain the content of {{PAGE_TITLE}} to a beginner."> Explain this page for a beginner.</label>
-        <label class="opt"><input type="radio" name="p" value="Create 5 social post ideas referencing {{PAGE_TITLE}} (link: {{PAGE_URL}})."> 5 social post ideas about this page.</label>
-      </div>
-      <button id="ask" class="ask">Ask AI</button>
-      <p class="muted" style="margin-top:10px">
-        Tip: limit services like <code>AiShare.open(prompt, { services: ['chatgpt','claude'] })</code>
+    <!-- Header / README-ish info -->
+    <div class="card row">
+      <h1>AI Share Widget</h1>
+      <p class="muted small">
+        A tiny script that opens your prompt in the AI tool of your choice (ChatGPT, Claude, Perplexity, Gemini).
+        One import line. Drop a dropdown + Send button anywhere on your page.
+        Open source: <a href="https://github.com/yoheinakajima/ai-share-widget" target="_blank" rel="noopener">github.com/yoheinakajima/ai-share-widget</a>
       </p>
     </div>
 
-    <div class="card" style="margin-top:16px">
-      <strong>CDN usage:</strong>
-      <pre style="background:#0b1220;color:#dbe2ff;padding:12px;border-radius:10px;overflow:auto"><code>&lt;script src="https://cdn.jsdelivr.net/gh/you/ai-share-widget@v1/ai-share.js"&gt;&lt;/script&gt;
+    <!-- Prompt picker + dropdown target -->
+    <div class="card row">
+      <div>
+        <strong>Pick a prompt about this page:</strong>
+        <div class="opts" id="prompt-options">
+          <label class="opt"><input type="radio" name="p" value="Summarize {{PAGE_TITLE}} at {{PAGE_URL}} in 3 concise bullets."> Summarize this page in 3 bullets.</label>
+          <label class="opt"><input type="radio" name="p" value="Explain the content of {{PAGE_TITLE}} for a beginner (avoid jargon)."> Explain for a beginner.</label>
+          <label class="opt"><input type="radio" name="p" value="Create five social post ideas referencing {{PAGE_TITLE}} (link: {{PAGE_URL}})."> 5 social post ideas.</label>
+        </div>
+      </div>
+
+      <div class="inline">
+        <button id="ask" class="btn">Ask AI</button>
+        <!-- Inline dropdown mounts here -->
+        <span id="ai-dest"></span>
+      </div>
+      <p class="muted small">
+        Tip: limit services by key: <code class="code" style="display:inline-block;padding:4px 6px;">{ services: ['chatgpt','claude'] }</code>
+      </p>
+    </div>
+
+    <!-- How to use (CDN import with full URL) -->
+    <div class="card row">
+      <strong>Use it via CDN (one line import):</strong>
+      <pre class="code">&lt;script src="https://yoheinakajima.github.io/ai-share-widget/ai-share.js"&gt;&lt;/script&gt;
 &lt;script&gt;
-  const prompt = "Summarize " + document.title + " (" + location.href + ")";
-  AiShare.open(prompt /*, { services: ['chatgpt','claude'] }*/);
-&lt;/script&gt;</code></pre>
+  // Mount a dropdown anywhere:
+  AiShare.mountDropdown('#some-container', () =&gt; "Summarize " + document.title + " (" + location.href + ")");
+  // Or open a specific model directly:
+  // AiShare.openDirect('chatgpt', "Your prompt here");
+&lt;/script&gt;</pre>
+
+      <div class="spacer"></div>
+      <strong>Alternative via jsDelivr (versioned):</strong>
+      <pre class="code">&lt;script src="https://cdn.jsdelivr.net/gh/yoheinakajima/ai-share-widget@v1/ai-share.js"&gt;&lt;/script&gt;</pre>
     </div>
   </div>
 
-  <!-- One-line import -->
-  <script src="./ai-share.js"></script>
+  <!-- One-line import (full URL as requested) -->
+  <script src="https://yoheinakajima.github.io/ai-share-widget/ai-share.js"></script>
   <script>
-    // Simple demo: enable Ask AI when a prompt is selected, replace placeholders, then call AiShare.open(...)
+    // --- Demo wiring ---
     const askBtn = document.getElementById('ask');
     let chosen = "";
 
+    // Enable Ask AI after selecting a prompt
     document.getElementById('prompt-options').addEventListener('change', (e) => {
       if (e.target && e.target.name === 'p') {
         chosen = e.target.value || "";
@@ -63,6 +97,7 @@
       }
     });
 
+    // Simple context replacement in the demo page (library stays minimal)
     function applyContext(p) {
       const sel = (window.getSelection && String(window.getSelection()).trim()) || "";
       return String(p)
@@ -71,11 +106,18 @@
         .replaceAll("{{SELECTION}}", sel.slice(0, 600));
     }
 
+    // Mount the inline dropdown once; prompt is resolved on click
+    // (We pass a function so it always uses the latest selected radio + context)
+    AiShare.mountDropdown('#ai-dest', () => applyContext(chosen), {
+      // services: ['chatgpt','claude'], // uncomment to limit
+      buttonText: 'Send'
+    });
+
+    // Optional: clicking "Ask AI" focuses the dropdown button (nice flow)
     askBtn.addEventListener('click', () => {
       if (!chosen) return;
-      const prompt = applyContext(chosen);
-      // Optional: limit services -> AiShare.open(prompt, { services: ['chatgpt','claude'] });
-      AiShare.open(prompt);
+      // no-op here; dropdown already present and ready to use
+      // (You could also auto-open a default service via AiShare.openDirect if you wanted.)
     });
   </script>
 </body>
