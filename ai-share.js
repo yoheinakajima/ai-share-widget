@@ -3,17 +3,17 @@
  *  API:
  *    AiShare.mountButtons(container, promptOrFn, { services?: string[], size?: 'md'|'sm' })
  *    AiShare.openDirect(serviceKey, prompt)
- *    AiShare.registerService(key, { label, url, param, icon? })
+ *    AiShare.registerService(key, { label, url, param })
  *    AiShare.registry
  */
 (function (w, d) {
   // ---------- Service Registry ----------
   const Registry = {
     services: {
-      chatgpt:    { label: "ChatGPT",    url: "https://chat.openai.com/",         param: "q", icon: "💬" },
-      claude:     { label: "Claude",     url: "https://claude.ai/new",            param: "q", icon: "✨" },
-      perplexity: { label: "Perplexity", url: "https://www.perplexity.ai/search", param: "q", icon: "🔎" },
-      gemini:     { label: "Gemini",     url: "https://gemini.google.com/app",    param: "q", icon: "🟦" }
+      chatgpt:    { label: "ChatGPT",    url: "https://chat.openai.com/",         param: "q" },
+      claude:     { label: "Claude",     url: "https://claude.ai/new",            param: "q" },
+      perplexity: { label: "Perplexity", url: "https://www.perplexity.ai/search", param: "q" },
+      gemini:     { label: "Gemini",     url: "https://gemini.google.com/app",    param: "q" }
     },
     buildURL(key, prompt) {
       const k = String(key || "").toLowerCase();
@@ -35,7 +35,6 @@
   .ai-btn:active{transform:translateY(1px)}
   @media(hover:hover){.ai-btn:hover{background:#f6f8fc}}
   .ai-btn.sm{padding:8px 12px;border-radius:10px;font-size:14px}
-  .ai-icon{font-size:16px;line-height:1}
   `;
   function ensureStyle() {
     if (!d.getElementById(STYLE_ID)) {
@@ -78,7 +77,7 @@
         const btn = d.createElement("button");
         btn.type = "button";
         btn.className = "ai-btn" + (opts.size === "sm" ? " sm" : "");
-        btn.innerHTML = `<span class="ai-icon">${def.icon || "🤖"}</span><span>${def.label}</span>`;
+        btn.textContent = def.label;
         btn.addEventListener("click", () => {
           const prompt = (typeof promptOrFn === "function" ? promptOrFn() : promptOrFn) || "";
           const p = String(prompt).trim();
