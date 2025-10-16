@@ -1,17 +1,10 @@
 /*! AI Share Widget | MIT License
  *  Single-file widget: registry + minimal row-of-buttons + style injection
- *  Recommended (jsDelivr):
- *    <script src="https://cdn.jsdelivr.net/gh/yoheinakajima/ai-share-widget@v1/ai-share.js"></script>
- *    <div id="ai-buttons"></div>
- *    <script>
- *      AiShare.mountButtons('#ai-buttons', () => "Your prompt text here", { services: ['chatgpt','claude','gemini'] });
- *    </script>
- *
  *  API:
  *    AiShare.mountButtons(container, promptOrFn, { services?: string[], size?: 'md'|'sm' })
  *    AiShare.openDirect(serviceKey, prompt)
  *    AiShare.registerService(key, { label, url, param, icon? })
- *    AiShare.registry  // { services, buildURL(key, prompt) }
+ *    AiShare.registry
  */
 (function (w, d) {
   // ---------- Service Registry ----------
@@ -70,12 +63,12 @@
     /** Render a row of buttons; each opens its service with your prompt. */
     mountButtons(container, promptOrFn, options) {
       const root = resolveEl(container);
-      if (!root) return console.warn("[AiShare] container not found:", container);
+      if (!root) { console.warn("[AiShare] container not found:", container); return null; }
       ensureStyle();
 
       const opts = Object.assign({ size: "md" }, options || {});
       const keys = normalizeKeys(opts.services);
-      if (!keys.length) return console.warn("[AiShare] no services configured");
+      if (!keys.length) { console.warn("[AiShare] no services configured"); return null; }
 
       // Clean & render
       root.innerHTML = "";
@@ -89,7 +82,7 @@
         btn.addEventListener("click", () => {
           const prompt = (typeof promptOrFn === "function" ? promptOrFn() : promptOrFn) || "";
           const p = String(prompt).trim();
-          if (!p) return console.warn("[AiShare] empty prompt");
+          if (!p) { console.warn("[AiShare] empty prompt"); return; }
           const url = Registry.buildURL(k, p);
           w.open(url, "_blank", "noopener");
         });
@@ -102,7 +95,7 @@
     /** Open a specific service immediately */
     openDirect(serviceKey, prompt) {
       const p = String(prompt || "").trim();
-      if (!p) return console.warn("[AiShare] empty prompt");
+      if (!p) { console.warn("[AiShare] empty prompt"); return; }
       const url = Registry.buildURL(serviceKey, p);
       w.open(url, "_blank", "noopener");
     },
