@@ -1,13 +1,82 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>AI Share Widget Demo</title>
+  <meta charset="UTF-8" />
+  <title>AI Share — Minimal Demo</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:#f7f8fb;color:#111;margin:0}
+    .wrap{max-width:760px;margin:0 auto;padding:40px 20px}
+    h1{margin:0 0 10px}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:20px;box-shadow:0 2px 10px rgba(0,0,0,.06)}
+    .muted{color:#666}
+    .options{display:grid;gap:10px;margin:16px 0}
+    .opt{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;background:#fff}
+    .ask{margin-top:10px;width:100%;padding:10px 14px;border-radius:10px;border:0;background:#0b63f6;color:#fff;font-size:1rem;cursor:not-allowed;opacity:.6}
+    .ask.enabled{cursor:pointer;opacity:1}
+    .ask.enabled:hover{background:#094bd2}
+    code{background:#eef2ff;padding:2px 6px;border-radius:6px}
+  </style>
 </head>
 <body>
-  <h1>AI Share Widget Demo</h1>
-  <p>Try the floating “Ask AI” button in the corner!</p>
+  <div class="wrap">
+    <h1>AI Share Widget (Minimal)</h1>
+    <p class="muted">
+      Pick a prompt about this page, then click <em>Ask AI</em>. The library shows a model picker and opens the chosen AI with your prompt.
+    </p>
 
+    <div class="card">
+      <strong>Choose a prompt:</strong>
+      <div class="options" id="prompt-options">
+        <label class="opt"><input type="radio" name="p" value="Summarize {{PAGE_TITLE}} at {{PAGE_URL}} in 3 bullets."> Summarize this page in 3 bullets.</label>
+        <label class="opt"><input type="radio" name="p" value="Explain the content of {{PAGE_TITLE}} to a beginner."> Explain this page for a beginner.</label>
+        <label class="opt"><input type="radio" name="p" value="Create 5 social post ideas referencing {{PAGE_TITLE}} (link: {{PAGE_URL}})."> 5 social post ideas about this page.</label>
+      </div>
+      <button id="ask" class="ask">Ask AI</button>
+      <p class="muted" style="margin-top:10px">
+        Tip: limit services like <code>AiShare.open(prompt, { services: ['chatgpt','claude'] })</code>
+      </p>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <strong>CDN usage:</strong>
+      <pre style="background:#0b1220;color:#dbe2ff;padding:12px;border-radius:10px;overflow:auto"><code>&lt;script src="https://cdn.jsdelivr.net/gh/you/ai-share-widget@v1/ai-share.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+  const prompt = "Summarize " + document.title + " (" + location.href + ")";
+  AiShare.open(prompt /*, { services: ['chatgpt','claude'] }*/);
+&lt;/script&gt;</code></pre>
+    </div>
+  </div>
+
+  <!-- One-line import -->
   <script src="./ai-share.js"></script>
+  <script>
+    // Simple demo: enable Ask AI when a prompt is selected, replace placeholders, then call AiShare.open(...)
+    const askBtn = document.getElementById('ask');
+    let chosen = "";
+
+    document.getElementById('prompt-options').addEventListener('change', (e) => {
+      if (e.target && e.target.name === 'p') {
+        chosen = e.target.value || "";
+        askBtn.classList.add('enabled');
+        askBtn.removeAttribute('disabled');
+      }
+    });
+
+    function applyContext(p) {
+      const sel = (window.getSelection && String(window.getSelection()).trim()) || "";
+      return String(p)
+        .replaceAll("{{PAGE_TITLE}}", document.title || "")
+        .replaceAll("{{PAGE_URL}}", location.href)
+        .replaceAll("{{SELECTION}}", sel.slice(0, 600));
+    }
+
+    askBtn.addEventListener('click', () => {
+      if (!chosen) return;
+      const prompt = applyContext(chosen);
+      // Optional: limit services -> AiShare.open(prompt, { services: ['chatgpt','claude'] });
+      AiShare.open(prompt);
+    });
+  </script>
 </body>
 </html>
