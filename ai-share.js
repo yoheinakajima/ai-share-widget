@@ -1,11 +1,17 @@
 /*! AI Share Widget | MIT License
- *  Single-file library: registry + minimal modal + style injection
- *  Usage:
- *    <script src="ai-share.js"></script>
- *    AiShare.open("Summarize " + document.title + " (" + location.href + ")");
+ *  Single-file library: registry + minimal dropdown UI + style injection
+ *  Usage (CDN):
+ *    <script src="https://yoheinakajima.github.io/ai-share-widget/ai-share.js"></script>
+ *    AiShare.mountDropdown('#dest', () => 'Your prompt here', { services: ['chatgpt','claude'], buttonText: 'Send' });
+ *
+ *  API:
+ *    AiShare.mountDropdown(container, promptOrFn, { services?: string[], buttonText?: string })
+ *    AiShare.openDirect(serviceKey, prompt)
+ *    AiShare.registerService(key, { label, url, param })
+ *    AiShare.registry  // { services, buildURL(...) }
  */
 (function (w, d) {
-  // ---- Minimal service registry -------------------------------------------
+  // --------- Service Registry ----------
   const Registry = {
     services: {
       chatgpt:    { label: "ChatGPT",    url: "https://chat.openai.com/",         param: "q" },
@@ -25,17 +31,12 @@
     }
   };
 
-  // ---- Style injection (one time) -----------------------------------------
+  // --------- CSS Injection ------------
   const STYLE_ID = "ai-share-style";
   const CSS = `
-  .ai-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
-  .ai-modal-content{width:min(92vw,420px);background:#fff;border-radius:12px;padding:20px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
-  .ai-modal-title{margin:0 0 10px;font-size:1.1rem}
-  .ai-select{width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:8px;margin:8px 0 16px;font-size:1rem}
-  .ai-actions{display:flex;gap:10px;justify-content:flex-end}
-  .ai-btn{border:0;border-radius:8px;padding:8px 14px;font-size:.95rem;cursor:pointer}
-  .ai-cancel{background:#eee}
-  .ai-send{background:#0b63f6;color:#fff}
+  .ai-inline{display:flex;gap:8px;align-items:center;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+  .ai-select{min-width:180px;padding:8px 10px;border:1px solid #e5e7eb;border-radius:8px;font-size:14px;background:#fff}
+  .ai-send{padding:8px 12px;border:0;border-radius:8px;font-size:14px;background:#0b63f6;color:#fff;cursor:pointer}
   .ai-send:hover{background:#094bd2}
   `;
   function ensureStyle() {
@@ -47,79 +48,76 @@
     }
   }
 
-  // ---- Modal (lazy-created + reused) --------------------------------------
-  let modal, selectEl, sendBtn, cancelBtn, currentPrompt = "", currentKeys = [];
-
-  function optionHTML(keys) {
-    return keys.map(k => `<option value="${k}">${Registry.services[k].label}</option>`).join("");
-  }
+  // --------- Helpers ------------------
   function normalizeKeys(services) {
     if (Array.isArray(services) && services.length) {
       return services.map(s => String(s).toLowerCase()).filter(k => Registry.services[k]);
     }
     return Object.keys(Registry.services); // default: all
   }
-  function ensureModal(keys) {
-    if (!modal) {
-      ensureStyle();
-      modal = d.createElement("div");
-      modal.className = "ai-modal";
-      modal.setAttribute("data-ai-share-modal", "");
-      modal.innerHTML = `
-        <div class="ai-modal-content" role="dialog" aria-modal="true" aria-labelledby="ai-modal-title">
-          <h3 class="ai-modal-title" id="ai-modal-title">Choose your AI</h3>
-          <select class="ai-select" id="ai-service"></select>
-          <div class="ai-actions">
-            <button type="button" class="ai-btn ai-cancel">Cancel</button>
-            <button type="button" class="ai-btn ai-send">Send</button>
-          </div>
-        </div>`;
-      d.body.appendChild(modal);
-
-      selectEl  = modal.querySelector("#ai-service");
-      sendBtn   = modal.querySelector(".ai-send");
-      cancelBtn = modal.querySelector(".ai-cancel");
-
-      cancelBtn.addEventListener("click", () => modal.style.display = "none");
-      modal.addEventListener("click", (e) => { if (e.target === modal) modal.style.display = "none"; });
-      sendBtn.addEventListener("click", () => {
-        const key = selectEl.value;
-        if (!key || !currentPrompt) return;
-        const url = Registry.buildURL(key, currentPrompt);
-        w.open(url, "_blank", "noopener");
-        modal.style.display = "none";
-      });
-    }
-    const sameSet = currentKeys.length === keys.length && currentKeys.every((k,i)=>k===keys[i]);
-    if (!sameSet) {
-      selectEl.innerHTML = optionHTML(keys);
-      currentKeys = keys.slice();
-    }
+  function resolveContainer(container) {
+    if (typeof container === 'string') return d.querySelector(container);
+    return container && container.nodeType === 1 ? container : null;
   }
 
-  // ---- Public API ----------------------------------------------------------
+  // --------- Public API ---------------
   const API = {
-    /** Open model-chooser modal for a prompt. options: { services?: string[] } */
-    open(prompt, options) {
-      const p = String(prompt || "").trim();
-      if (!p) return console.warn("[AiShare] empty prompt");
-      const keys = normalizeKeys(options?.services);
+    /** Mount an inline dropdown + send button.
+     *  container: selector or element
+     *  promptOrFn: string OR () => string (evaluated on click)
+     *  options: { services?: string[], buttonText?: string }
+     */
+    mountDropdown(container, promptOrFn, options) {
+      const root = resolveContainer(container);
+      if (!root) return console.warn("[AiShare] container not found:", container);
+      ensureStyle();
+
+      const opts = Object.assign({ buttonText: "Send" }, options || {});
+      const keys = normalizeKeys(opts.services);
       if (!keys.length) return console.warn("[AiShare] no services configured");
-      currentPrompt = p;
-      ensureModal(keys);
-      modal.style.display = "flex";
-      selectEl?.focus();
+
+      root.innerHTML = ""; // clean
+      const wrap = d.createElement("div");
+      wrap.className = "ai-inline";
+
+      const select = d.createElement("select");
+      select.className = "ai-select";
+      select.setAttribute("aria-label", "AI service");
+      select.innerHTML = keys.map(k => `<option value="${k}">${Registry.services[k].label}</option>`).join("");
+
+      const button = d.createElement("button");
+      button.className = "ai-send";
+      button.type = "button";
+      button.textContent = opts.buttonText;
+
+      button.addEventListener("click", () => {
+        const key = select.value;
+        const prompt = (typeof promptOrFn === 'function' ? promptOrFn() : promptOrFn) || "";
+        const p = String(prompt).trim();
+        if (!p) return console.warn("[AiShare] empty prompt");
+        const url = Registry.buildURL(key, p);
+        w.open(url, "_blank", "noopener");
+      });
+
+      wrap.appendChild(select);
+      wrap.appendChild(button);
+      root.appendChild(wrap);
+
+      return { select, button, keys };
     },
-    /** Skip modal: open a specific service directly */
+
+    /** Open a specific service immediately */
     openDirect(serviceKey, prompt) {
       const p = String(prompt || "").trim();
       if (!p) return console.warn("[AiShare] empty prompt");
       const url = Registry.buildURL(serviceKey, p);
       w.open(url, "_blank", "noopener");
     },
-    /** Extend/override services at runtime */
+
+    /** Extend/override services */
     registerService: Registry.register.bind(Registry),
-    /** Access the registry */
+
+    /** Access the registry (read/modify services) */
     registry: Registry
   };
 
