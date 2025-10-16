@@ -7,119 +7,120 @@
   <style>
     :root {
       --fg:#0b1220; --muted:#626b7f; --border:#e6eaf2; --card:#fff; --bg:#f6f8fc;
-      --radius:12px; --shadow:0 2px 10px rgba(0,0,0,.06);
+      --radius:14px; --shadow:0 4px 18px rgba(10,10,20,.06);
       --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
       --sans: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
       --primary:#0b63f6; --primaryDark:#094bd2;
     }
+    *{box-sizing:border-box}
     body { margin:0; background:var(--bg); color:var(--fg); font-family:var(--sans); }
-    .wrap { max-width:960px; margin:0 auto; padding:24px 16px; display:grid; gap:14px; }
-    .card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px; }
-    h1,h2 { margin:0 0 6px; font-size:1.22rem; }
+    .wrap { max-width:980px; margin:0 auto; padding:26px 16px; display:grid; gap:16px; }
+    .card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:18px; }
+    h1 { margin:0 0 6px; font-size:1.25rem; letter-spacing:.1px; }
+    h2 { margin:0 0 6px; font-size:1.05rem; }
     p { margin:0; }
     .muted { color:var(--muted); }
     a { color:var(--primary); text-decoration:none; }
     a:hover { text-decoration:underline; }
-    .btn { padding:10px 14px; border-radius:10px; border:0; background:var(--primary); color:#fff; cursor:pointer; }
-    .btn:hover { background:var(--primaryDark); }
+    .code { font-family:var(--mono); font-size:13px; line-height:1.55; padding:12px; background:#f3f5ff; color:#0b1220; border:1px solid var(--border); border-radius:12px; overflow:auto; }
     .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-    .code { font-family:var(--mono); font-size:13px; line-height:1.55; padding:12px; background:#f3f5ff; color:#0b1220; border:1px solid var(--border); border-radius:10px; overflow:auto; }
-    #site-content p + p { margin-top: 8px; }
+    .pill { display:inline-flex; align-items:center; gap:.5ch; padding:8px 12px; border:1px solid var(--border); border-radius:999px; background:#fff; color:#0b1220; }
+    #context p + p { margin-top: 8px; }
+    .divider { height:1px; background:var(--border); margin:8px 0; }
   </style>
 </head>
 <body>
-  <div class="wrap" id="site-root">
+  <div class="wrap">
     <!-- Header -->
     <div class="card">
       <h1>AI Share Widget</h1>
       <p class="muted">
-        A tiny script that opens your prompt in ChatGPT, Claude, Perplexity, or Gemini. Mobile-friendly modal, zero deps, one import line.
-        Open source on <a href="https://github.com/yoheinakajima/ai-share-widget" target="_blank" rel="noopener">GitHub</a>.
+        A tiny, zero-dependency widget that lets users open your prompt in their preferred AI
+        (ChatGPT, Claude, Perplexity, Gemini). It renders a lightweight row of buttons—one per service.
+        Recommended import via <strong>jsDelivr</strong>. Source on
+        <a href="https://github.com/yoheinakajima/ai-share-widget" target="_blank" rel="noopener">GitHub</a>.
       </p>
-      <div class="row" style="margin-top:8px">
-        <button class="btn" id="ask-ai-btn">Ask AI: Ideas for using this widget</button>
+      <div class="divider"></div>
+      <div class="row">
+        <span class="pill">🚀 Minimal</span>
+        <span class="pill">📱 Mobile-friendly</span>
+        <span class="pill">🧩 Drop-in</span>
+        <span class="pill">🔁 Extensible</span>
       </div>
     </div>
 
-    <!-- README-ish content (also used as context for the demo prompt) -->
-    <div class="card" id="site-content">
-      <h2>What it does</h2>
-      <p>
-        Add an “Ask AI” entry point anywhere in your product. When clicked, users pick their preferred AI service
-        and are redirected with your prompt prefilled (via URL parameter). You control the prompt — the library only handles
-        the model picker and redirect.
-      </p>
+    <!-- Live widget demo -->
+    <div class="card">
+      <h2>Generate use cases with AI:</h2>
+      <p class="muted">Pick a service below. We’ll pass this page’s content as context in the prompt.</p>
+      <div style="height:8px"></div>
+      <div id="ai-buttons"></div>
+    </div>
 
-      <h2>Why it’s useful</h2>
-      <p>
-        Let users take anything they see — a doc page, support article, dataset, product list, dashboard state — and continue
-        the task in their preferred AI. Think: summarize, generate ideas, compare items, draft emails,
-        translate content, propose actions, etc.
-      </p>
-
+    <!-- README-ish: Quick Start -->
+    <div class="card" id="context">
       <h2>Quick Start (jsDelivr)</h2>
-      <pre class="code">&lt;script src="https://cdn.jsdelivr.net/gh/yoheinakajima/ai-share-widget@v1/ai-share.js"&gt;&lt;/script&gt;
+      <pre class="code">&lt;!-- 1) Import the widget --&gt;
+&lt;script src="https://cdn.jsdelivr.net/gh/yoheinakajima/ai-share-widget@v1/ai-share.js"&gt;&lt;/script&gt;
+
+&lt;!-- 2) Add a container where the row of buttons should appear --&gt;
+&lt;div id="ai-buttons"&gt;&lt;/div&gt;
+
+&lt;!-- 3) Mount it with your prompt (string or function) --&gt;
 &lt;script&gt;
-// Attach to a button; modal opens; selection redirects with your prompt:
-AiShare.attach('#ask-ai-btn', () =&gt; "Summarize " + document.title + " (" + location.href + ")");
-// Or call directly:
-// AiShare.open("Your prompt here", { services: ["chatgpt","claude"] });
+  AiShare.mountButtons('#ai-buttons', () =&gt; {
+    const text = document.body.innerText.replace(/\s+/g,' ').trim().slice(0, 1800);
+    return [
+      "Brainstorm 12 distinct, concrete ways to integrate this 'Ask AI' widget into different websites and apps.",
+      "Vary by product type (docs, blogs, ecommerce, dashboards, SaaS), user intent, and placement.",
+      "For each idea: provide a short title and one sentence rationale.",
+      "Use the following site content as context when relevant:",
+      text
+    ].join("\\n");
+  }, { services: ['chatgpt','claude','gemini','perplexity'] });
 &lt;/script&gt;</pre>
 
       <h2>API</h2>
-      <pre class="code">AiShare.open(prompt, { services?: string[] })      // show modal for prompt
-AiShare.attach(buttonSelOrEl, promptOrFn, { services?: string[] }) // bind an Ask AI button
-AiShare.openDirect(serviceKey, prompt)           // skip modal, open specific service
-AiShare.registerService(key, { label, url, param }) // extend/override services
-AiShare.registry.services                         // inspect current registry</pre>
+      <pre class="code">AiShare.mountButtons(container, promptOrFn, { services?: string[], size?: 'md'|'sm' })
+AiShare.openDirect(serviceKey, prompt)
+AiShare.registerService(key, { label, url, param, icon? })
+AiShare.registry.services</pre>
 
-      <h2>Destinations (editable)</h2>
+      <h2>Customize services</h2>
       <p class="muted">
-        ChatGPT, Claude, Perplexity, Gemini are included. If locations change, update via
-        <code>AiShare.registerService('poe', { label:'Poe', url:'https://poe.com/search', param:'q' })</code>.
+        Add or override destinations if URLs/params change:
       </p>
-    </div>
+      <pre class="code">AiShare.registerService('poe', { label:'Poe', url:'https://poe.com/search', param:'q', icon:'🟣' });</pre>
 
-    <!-- How the demo prompt works -->
-    <div class="card">
-      <h2>Demo: generate ideas using page context</h2>
-      <p class="muted">
-        The button above builds a prompt that asks for distinct ideas on how to use this widget in sites/apps,
-        passing the text of this page (from the box above) as context.
+      <h2>What it’s good for</h2>
+      <p>
+        Let users take anything they see—docs, help pages, product lists, dashboards—and continue in their preferred AI:
+        summarize, ideate, compare, translate, draft, or propose actions.
       </p>
-      <pre class="code" id="demo-prompt-preview"></pre>
+      <p class="muted">This page doubles as context for the demo prompt above.</p>
     </div>
   </div>
 
-  <!-- Library: recommend jsDelivr -->
+  <!-- Widget (jsDelivr recommended) -->
   <script src="https://cdn.jsdelivr.net/gh/yoheinakajima/ai-share-widget@v1/ai-share.js"></script>
   <script>
-    // --- Demo logic: build a single prompt from #site-content text as context ---
-    function extractContext(selector, maxLen) {
-      const el = document.querySelector(selector);
-      if (!el) return "";
-      const text = el.innerText.replace(/\s+/g, " ").trim();
-      return text.length > maxLen ? text.slice(0, maxLen) + "…" : text;
-    }
-
-    function buildIdeasPrompt() {
-      const context = extractContext("#site-content", 1800); // keep URL length reasonable
+    // Build a single prompt using this page's content as context (tight + simple).
+    function buildUseCasesPrompt() {
+      const text = document.getElementById('context').innerText
+        .replace(/\s+/g, ' ').trim().slice(0, 1800);
       return [
-        "Brainstorm 15 distinct, concrete ways to integrate a simple 'Ask AI' prompt-share widget into different websites and apps.",
+        "Brainstorm 15 distinct, concrete ways to integrate this 'Ask AI' widget into different websites and apps.",
         "Vary by product type (docs, blogs, ecommerce, dashboards, SaaS), user intent, and placement.",
-        "For each idea: provide a short title and one-sentence rationale.",
+        "For each idea: provide a short title and one sentence rationale.",
         "Use the following site content as context when relevant:",
-        "",
-        context
+        text
       ].join("\n");
     }
 
-    // Bind the button to open the modal with our prompt at click time.
-    AiShare.attach("#ask-ai-btn", buildIdeasPrompt);
-
-    // Show the exact prompt we send (for transparency)
-    document.addEventListener("DOMContentLoaded", () => {
-      document.getElementById("demo-prompt-preview").textContent = buildIdeasPrompt();
+    // Mount the row of buttons (ChatGPT, Claude, Gemini, Perplexity).
+    AiShare.mountButtons('#ai-buttons', buildUseCasesPrompt, {
+      services: ['chatgpt','claude','gemini','perplexity'],
+      size: 'md' // or 'sm'
     });
   </script>
 </body>
