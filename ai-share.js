@@ -1,11 +1,14 @@
 /*! AI Share Widget | MIT License
- *  Single-file library: registry + minimal dropdown UI + style injection
+ *  Single-file library: registry + minimal dropdown + style injection
  *  Usage (CDN):
  *    <script src="https://yoheinakajima.github.io/ai-share-widget/ai-share.js"></script>
- *    AiShare.mountDropdown('#dest', () => 'Your prompt here', { services: ['chatgpt','claude'], buttonText: 'Send' });
+ *    AiShare.attachLauncher('#ask', () => 'Your prompt here', { services: ['chatgpt','claude'] });
  *
  *  API:
- *    AiShare.mountDropdown(container, promptOrFn, { services?: string[], buttonText?: string })
+ *    AiShare.attachLauncher(buttonSelOrEl, promptOrFn, { services?: string[] })
+ *      - Renders a hidden dropdown next to the given button.
+ *      - On button click: shows dropdown.
+ *      - On dropdown change: opens new tab and hides dropdown.
  *    AiShare.openDirect(serviceKey, prompt)
  *    AiShare.registerService(key, { label, url, param })
  *    AiShare.registry  // { services, buildURL(...) }
@@ -34,10 +37,10 @@
   // --------- CSS Injection ------------
   const STYLE_ID = "ai-share-style";
   const CSS = `
-  .ai-inline{display:flex;gap:8px;align-items:center;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
-  .ai-select{min-width:180px;padding:8px 10px;border:1px solid #e5e7eb;border-radius:8px;font-size:14px;background:#fff}
-  .ai-send{padding:8px 12px;border:0;border-radius:8px;font-size:14px;background:#0b63f6;color:#fff;cursor:pointer}
-  .ai-send:hover{background:#094bd2}
+  .ai-inline-launcher{display:inline-flex;gap:8px;align-items:center;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+  .ai-launch-btn{padding:8px 12px;border:0;border-radius:10px;font-size:14px;background:#0b63f6;color:#fff;cursor:pointer}
+  .ai-launch-btn:hover{background:#094bd2}
+  .ai-select{min-width:180px;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px;font-size:14px;background:#fff;display:none}
   `;
   function ensureStyle() {
     if (!d.getElementById(STYLE_ID)) {
@@ -55,55 +58,65 @@
     }
     return Object.keys(Registry.services); // default: all
   }
-  function resolveContainer(container) {
-    if (typeof container === 'string') return d.querySelector(container);
-    return container && container.nodeType === 1 ? container : null;
+  function resolveEl(target) {
+    if (typeof target === "string") return d.querySelector(target);
+    return target && target.nodeType === 1 ? target : null;
   }
 
   // --------- Public API ---------------
   const API = {
-    /** Mount an inline dropdown + send button.
-     *  container: selector or element
-     *  promptOrFn: string OR () => string (evaluated on click)
-     *  options: { services?: string[], buttonText?: string }
+    /** Attach launcher behavior to an existing button.
+     *  - buttonSelOrEl: selector or Element of your "Ask AI" button
+     *  - promptOrFn: string OR () => string (evaluated on selection)
+     *  - options: { services?: string[] }
      */
-    mountDropdown(container, promptOrFn, options) {
-      const root = resolveContainer(container);
-      if (!root) return console.warn("[AiShare] container not found:", container);
+    attachLauncher(buttonSelOrEl, promptOrFn, options) {
+      const btn = resolveEl(buttonSelOrEl);
+      if (!btn) return console.warn("[AiShare] button not found:", buttonSelOrEl);
       ensureStyle();
 
-      const opts = Object.assign({ buttonText: "Send" }, options || {});
-      const keys = normalizeKeys(opts.services);
+      const keys = normalizeKeys(options?.services);
       if (!keys.length) return console.warn("[AiShare] no services configured");
 
-      root.innerHTML = ""; // clean
-      const wrap = d.createElement("div");
-      wrap.className = "ai-inline";
+      // Wrap the button + injected select inside a small inline container (for layout)
+      let wrap = btn.closest(".ai-inline-launcher");
+      if (!wrap) {
+        wrap = d.createElement("span");
+        wrap.className = "ai-inline-launcher";
+        btn.classList.add("ai-launch-btn");
+        btn.replaceWith(wrap);
+        wrap.appendChild(btn);
+      }
 
-      const select = d.createElement("select");
-      select.className = "ai-select";
-      select.setAttribute("aria-label", "AI service");
+      // Create or reuse the adjacent select
+      let select = wrap.querySelector("select.ai-select");
+      if (!select) {
+        select = d.createElement("select");
+        select.className = "ai-select";
+        select.setAttribute("aria-label", "AI service");
+        wrap.appendChild(select);
+      }
       select.innerHTML = keys.map(k => `<option value="${k}">${Registry.services[k].label}</option>`).join("");
 
-      const button = d.createElement("button");
-      button.className = "ai-send";
-      button.type = "button";
-      button.textContent = opts.buttonText;
+      // Button click -> show select
+      btn.addEventListener("click", () => {
+        select.style.display = "inline-block";
+        select.focus();
+      });
 
-      button.addEventListener("click", () => {
+      // Select change -> open immediately, then hide
+      select.addEventListener("change", () => {
         const key = select.value;
-        const prompt = (typeof promptOrFn === 'function' ? promptOrFn() : promptOrFn) || "";
+        const prompt = (typeof promptOrFn === "function" ? promptOrFn() : promptOrFn) || "";
         const p = String(prompt).trim();
         if (!p) return console.warn("[AiShare] empty prompt");
         const url = Registry.buildURL(key, p);
         w.open(url, "_blank", "noopener");
+        select.style.display = "none";
+        select.selectedIndex = 0; // keep first option selected for next time
       });
 
-      wrap.appendChild(select);
-      wrap.appendChild(button);
-      root.appendChild(wrap);
-
-      return { select, button, keys };
+      return { button: btn, select, keys };
     },
 
     /** Open a specific service immediately */
@@ -117,7 +130,7 @@
     /** Extend/override services */
     registerService: Registry.register.bind(Registry),
 
-    /** Access the registry (read/modify services) */
+    /** Access registry */
     registry: Registry
   };
 
